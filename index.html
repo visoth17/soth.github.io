@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Article Management</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+      }
+      form {
+        margin-bottom: 20px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      table,
+      th,
+      td {
+        border: 1px solid #ccc;
+      }
+      th,
+      td {
+        padding: 10px;
+        text-align: center;
+      }
+      th {
+        background-color: #f4f4f4;
+      }
+      .btn {
+        padding: 5px 10px;
+        border: none;
+        background-color: #007bff;
+        color: #fff;
+        cursor: pointer;
+        border-radius: 5px;
+      }
+      .btn-delete {
+        background-color: #f60810;
+      }
+      .btn-edit {
+        background-color: #ef429b;
+      }
+      .btn-view {
+        background-color: #60d4fe;
+      }
+      #search {
+        float: right;
+        margin-bottom: 20px;
+        padding: 10px;
+        width: 30%;
+      }
+      #loginForm {
+        display: flex;
+        flex-direction: column;
+        width: 350px;
+        margin: 250px auto;
+        padding: 35px;
+        border: 3px solid #ccc;
+        border-radius: 20px;
+        text-align: center;
+        background-color: rgb(200, 222, 230);
+        box-shadow: #747474;
+      }
+      #loginForm input {
+        margin-bottom: 15px;
+        padding: 10px;
+        font-size: 14px;
+      }
+      #loginForm button {
+        padding: 8px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      #ArticleManagement {
+        display: none;
+      }
+      #viewProfileModal {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: white;
+        border: 1px solid #ccc;
+        padding: 20px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 1000;
+        width: 50%;
+        display: none;
+        border-radius: 10px;
+      }
+      #viewProfileModal h2 {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+      #viewProfileModal p {
+        font-size: 16px;
+        margin: 10px 0;
+      }
+      #viewProfileModal button {
+        display: block;
+        margin: 0 auto;
+        padding: 10px 20px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+      #overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 999;
+        display: none;
+      }
+      form input,
+      form select {
+        width: 15%;
+        font-size: 15px;
+        padding: 11px;
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        box-sizing: border-box;
+      }
+      form button {
+        font-size: 15px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Login -->
+    <div id="loginForm">
+      <h2>LOGIN</h2>
+      <input type="text" id="username" placeholder="Enter username" required />
+      <input
+        type="password"
+        id="password"
+        placeholder="Enter password"
+        required
+      />
+      <button onclick="login()">Login</button>
+    </div>
+
+    <div id="ArticleManagement">
+      <h1>Article Management</h1>
+
+      <!-- Search -->
+      <input type="text" id="search" placeholder="Search by title or author" />
+
+      <form id="itemForm">
+        <label for="title">Title:</label>
+        <input type="text" id="title" placeholder="Enter title" required />
+        <label for="author">Author:</label>
+        <input type="text" id="author" placeholder="Enter author" required />
+        <label for="category">Category:</label>
+        <select id="category" required>
+          <option value="" disabled selected>Select a category</option>
+          <option value="Sports">Sports</option>
+          <option value="Technology">Technology</option>
+          <option value="Education">Education</option>
+        </select>
+        <button type="submit" class="btn">Add Item</button>
+      </form>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Nº</th>
+            <th>Title</th>
+            <th>Author</th>
+            <th>Category</th>
+            <th>Updated</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="itemList"></tbody>
+      </table>
+    </div>
+
+    <div id="overlay" onclick="closeProfile()"></div>
+
+    <!-- View Profile -->
+    <div id="viewProfileModal">
+      <h2>View Profile</h2>
+      <p><strong>Title:</strong> <span id="viewTitle"></span></p>
+      <p><strong>Author:</strong> <span id="viewAuthor"></span></p>
+      <p><strong>Category:</strong> <span id="viewCategory"></span></p>
+      <p><strong>Updated:</strong> <span id="viewUpdated"></span></p>
+      <button onclick="closeProfile()">Close</button>
+    </div>
+
+    <script>
+      let itemCount = 0;
+      let loggedIn = false;
+
+      const validUsername = "student";
+      const validPassword = "123";
+
+      //Login
+      function login() {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        if (username === validUsername && password === validPassword) {
+          loggedIn = true;
+          document.getElementById("loginForm").style.display = "none";
+          document.getElementById("ArticleManagement").style.display = "block";
+        } else {
+          alert("Invalid login credentials.");
+        }
+      }
+
+      const form = document.getElementById("itemForm");
+      const itemList = document.getElementById("itemList");
+      const search = document.getElementById("search");
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+
+        const title = document.getElementById("title").value;
+        const author = document.getElementById("author").value;
+        const category = document.getElementById("category").value;
+
+        if (title && author && category) {
+          itemCount++;
+          const row = document.createElement("tr");
+          const timestamp = new Date().toLocaleString();
+
+          row.innerHTML = `
+                    <td>${itemCount}</td>
+                    <td>${title}</td>
+                    <td>${author}</td>
+                    <td>${category}</td>
+                    <td>${timestamp}</td>
+                    <td>
+                        <button class="btn btn-view" onclick="viewProfile('${title}', '${author}', '${category}', '${timestamp}')">View Profile</button>
+                        <button class="btn btn-edit" onclick="editItem(this)">Edit</button>
+                        <button class="btn btn-delete" onclick="deleteItem(this)">Delete</button>
+                    </td>
+                `;
+          itemList.appendChild(row);
+          form.reset();
+        }
+      });
+
+      search.addEventListener("input", (e) => {
+        const query = e.target.value.toLowerCase();
+        const rows = itemList.querySelectorAll("tr");
+        rows.forEach((row) => {
+          const title = row.children[1].textContent.toLowerCase();
+          const author = row.children[2].textContent.toLowerCase();
+          if (title.includes(query) || author.includes(query)) {
+            row.style.display = "";
+          } else {
+            row.style.display = "none";
+          }
+        });
+      });
+      // Edit
+      function editItem(button) {
+        const row = button.parentElement.parentElement;
+        const title = row.children[1].textContent;
+        const author = row.children[2].textContent;
+        const category = row.children[3].textContent;
+
+        document.getElementById("title").value = title;
+        document.getElementById("author").value = author;
+        document.getElementById("category").value = category;
+        row.remove();
+        updateRowNumbers();
+      }
+
+      // Delete
+      function deleteItem(button) {
+        const row = button.parentElement.parentElement;
+        row.remove();
+        updateRowNumbers();
+      }
+
+      // Update
+      function updateRowNumbers() {
+        itemCount = 0;
+        const rows = itemList.querySelectorAll("tr");
+        rows.forEach((row, index) => {
+          row.children[0].textContent = index + 1;
+          itemCount++;
+        });
+      }
+
+      function viewProfile(title, author, category, timestamp) {
+        document.getElementById("viewTitle").textContent = title;
+        document.getElementById("viewAuthor").textContent = author;
+        document.getElementById("viewCategory").textContent = category;
+        document.getElementById("viewUpdated").textContent = timestamp;
+        document.getElementById("viewProfileModal").style.display = "block";
+        document.getElementById("overlay").style.display = "block";
+      }
+
+      function closeProfile() {
+        document.getElementById("viewProfileModal").style.display = "none";
+        document.getElementById("overlay").style.display = "none";
+      }
+    </script>
+  </body>
+</html>
